@@ -527,8 +527,8 @@ const ProfileSettings = ({ onProfileUpdate }) => {
                 </div>
             </div>
 
-            {/* Signature Settings (Visible for Managers and Admin/Managers and Security) */}
-            {(profile?.role === 'manager' || profile?.role === 'admin' || profile?.role === 'security') && (
+            {/* Signature Settings (Visible for All Users) */}
+            {profile && (
                 <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-10 space-y-6">
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2.5 mb-2">
                         <Upload size={16} className="text-indigo-600" /> Digital Signature

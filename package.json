@@ -11,6 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ag-grid-community": "^35.1.0",
+    "ag-grid-react": "^35.1.0",
     "axios": "^1.13.5",
     "framer-motion": "^12.34.2",
     "lucide-react": "^0.574.0",

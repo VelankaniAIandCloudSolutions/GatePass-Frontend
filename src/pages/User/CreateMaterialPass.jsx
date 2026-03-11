@@ -24,6 +24,8 @@ const numberToWords = (num) => {
     return str.trim() + ' Rupees only';
 };
 
+import DataGrid from '../../components/common/DataGrid';
+
 const CreateMaterialPass = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +44,17 @@ const CreateMaterialPass = () => {
         net_weight: '',
         gross_weight: '',
         pass_type: 'RGP',
+        receiver_id: '',
         receiver_name: '',
-        receiver_mobile: ''
+        receiver_mobile: '',
+        receiver_email: '',
+        expected_return_date: ''
     });
+
+    const [receiverSearch, setReceiverSearch] = useState('');
+    const [receiverResults, setReceiverResults] = useState([]);
+    const [showReceiverDropdown, setShowReceiverDropdown] = useState(false);
+    const [isMobileAutoPopulated, setIsMobileAutoPopulated] = useState(false);
 
     const [items, setItems] = useState([
         { id: Date.now(), part_no: '', description: '', qty: 1, unit_cost: 0, remarks: '' }
@@ -77,6 +87,10 @@ const CreateMaterialPass = () => {
         if (!formData.movement_type || !formData.from_location_id || !formData.pass_type) return false;
         if (formData.movement_type === 'internal' && (!formData.to_location_id || formData.to_location_id === formData.from_location_id)) return false;
         if (formData.movement_type === 'external' && (!formData.external_address || formData.external_address.trim().length < 5)) return false;
+        
+        if (!formData.receiver_email || !formData.receiver_email.includes('@')) return false;
+        if (!formData.receiver_name) return false;
+
         return items.every(item => item.description && item.qty > 0);
     };
 
@@ -94,11 +108,9 @@ const CreateMaterialPass = () => {
                 { responseType: 'blob' }
             );
             
-            // Create blob with explicit type
             const file = new Blob([res.data], { type: 'application/pdf' });
             const fileURL = URL.createObjectURL(file);
             
-            // Open in new tab securely
             const pdfWindow = window.open();
             pdfWindow.location.href = fileURL;
             
@@ -141,6 +153,85 @@ const CreateMaterialPass = () => {
 
     const calculateTotalQty = () => items.reduce((acc, item) => acc + (parseInt(item.qty) || 0), 0);
     const calculateTotalValue = () => items.reduce((acc, item) => acc + ((item.qty || 0) * (item.unit_cost || 0)), 0);
+
+    const columnDefs = [
+        {
+            headerName: 'Sl',
+            valueGetter: (params) => params.node.rowIndex + 1,
+            width: 70,
+            cellClass: 'text-center font-bold text-[10px] text-slate-400 border-r border-slate-100'
+        },
+        {
+            headerName: 'Part No',
+            field: 'part_no',
+            minWidth: 130,
+            cellRenderer: (params) => (
+                <input 
+                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none" 
+                    placeholder="PN-000" 
+                    value={params.value} 
+                    onChange={(e) => updateItem(params.data.id, 'part_no', e.target.value)} 
+                />
+            )
+        },
+        {
+            headerName: 'Description',
+            field: 'description',
+            flex: 2,
+            minWidth: 200,
+            cellRenderer: (params) => (
+                <input 
+                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none" 
+                    placeholder="Item descriptive name..." 
+                    value={params.value} 
+                    onChange={(e) => updateItem(params.data.id, 'description', e.target.value)} 
+                />
+            )
+        },
+        {
+            headerName: 'Qty',
+            field: 'qty',
+            width: 100,
+            cellRenderer: (params) => (
+                <input 
+                    type="number" 
+                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none text-center" 
+                    value={params.value} 
+                    onChange={(e) => updateItem(params.data.id, 'qty', parseInt(e.target.value) || 0)} 
+                />
+            )
+        },
+        {
+            headerName: 'Remarks',
+            field: 'remarks',
+            flex: 1,
+            minWidth: 150,
+            cellRenderer: (params) => (
+                <input 
+                    className="w-full h-full px-4 py-3 text-[11px] font-medium bg-transparent outline-none" 
+                    placeholder="Note..." 
+                    value={params.value} 
+                    onChange={(e) => updateItem(params.data.id, 'remarks', e.target.value)} 
+                />
+            )
+        },
+        {
+            headerName: '',
+            width: 60,
+            sortable: false,
+            filter: false,
+            cellRenderer: (params) => (
+                <div className="flex items-center justify-center h-full">
+                    <button 
+                        onClick={() => removeItem(params.data.id)} 
+                        className={`p-2 text-slate-200 hover:text-red-500 transition-all ${items.length === 1 ? 'opacity-0 cursor-default' : 'hover:scale-110 active:scale-90'}`}
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            )
+        }
+    ];
 
     if (submittedPass) {
         return (
@@ -203,7 +294,6 @@ const CreateMaterialPass = () => {
             <main className="flex-1 p-6 md:p-10 overflow-y-auto">
                 <div className="max-w-6xl mx-auto space-y-6">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Movement Config */}
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                             <SectionTitle icon={<Globe className="text-indigo-600" size={18} />} title="Movement Context" subtitle="Flow direction" />
                             <div className="grid grid-cols-2 gap-3 mt-4">
@@ -256,7 +346,6 @@ const CreateMaterialPass = () => {
                             </div>
                         </div>
 
-                        {/* Logistics Specs */}
                         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
                             <SectionTitle icon={<Truck className="text-emerald-600" size={18} />} title="Logistics Specifications" subtitle="Optional metadata" />
                             <div className="grid grid-cols-2 gap-4 mt-6">
@@ -293,83 +382,117 @@ const CreateMaterialPass = () => {
                             </div>
                         </div>
 
-                        {/* Send To Details */}
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                            <SectionTitle icon={<UserIcon className="text-blue-600" size={18} />} title="To Whom Sending (Optional)" subtitle="Receiver Details" />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                <div className="space-y-2">
-                                    <InputLabel label="Receiver Name" />
+                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2 relative">
+                            <SectionTitle icon={<UserIcon className="text-blue-600" size={18} />} title="Receiver Identification" subtitle="Search and select recipient" />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                                <div className="space-y-2 relative lg:col-span-2">
+                                    <InputLabel label="Search Receiver (Name or Email)" />
                                     <input 
                                         type="text" 
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-600" 
-                                        placeholder="Name of the receiver..." 
-                                        value={formData.receiver_name} 
-                                        onChange={(e) => setFormData({...formData, receiver_name: e.target.value})} 
+                                        placeholder="Type name or email to search..." 
+                                        value={receiverSearch} 
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setReceiverSearch(val);
+                                            if (val.length >= 2) {
+                                                axios.get(`/user/search?query=${val}`)
+                                                    .then(res => {
+                                                        if (res.data.success) {
+                                                            setReceiverResults(res.data.data);
+                                                            setShowReceiverDropdown(true);
+                                                        }
+                                                    })
+                                                    .catch(err => console.error(err));
+                                            } else {
+                                                setShowReceiverDropdown(false);
+                                            }
+                                        }} 
+                                    />
+                                    {showReceiverDropdown && receiverResults.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                            {receiverResults.map(user => (
+                                                <div 
+                                                    key={user.id} 
+                                                    onClick={() => {
+                                                        const hasMobile = !!user.mobile_number;
+                                                        setFormData({
+                                                            ...formData,
+                                                            receiver_id: user.id,
+                                                            receiver_name: user.name,
+                                                            receiver_email: user.email,
+                                                            receiver_mobile: user.mobile_number || ''
+                                                        });
+                                                        setIsMobileAutoPopulated(hasMobile);
+                                                        setReceiverSearch(user.name);
+                                                        setShowReceiverDropdown(false);
+                                                    }}
+                                                    className="px-4 py-3 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-none"
+                                                >
+                                                    <p className="text-xs font-bold text-slate-900">{user.name}</p>
+                                                    <p className="text-[10px] text-slate-500">{user.email}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <InputLabel label="Receiver Email" />
+                                    <input 
+                                        type="email" 
+                                        className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-500 outline-none" 
+                                        placeholder="Select receiver..." 
+                                        value={formData.receiver_email} 
+                                        readOnly
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <InputLabel label="Receiver Mobile Number" />
+                                    <InputLabel label="Receiver Mobile" />
                                     <input 
                                         type="text" 
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 outline-none focus:border-blue-600" 
-                                        placeholder="Mobile number..." 
+                                        className={`w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none transition-all ${
+                                            (formData.receiver_id && isMobileAutoPopulated) ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 text-slate-700 focus:border-blue-600'
+                                        }`}
+                                        placeholder={formData.receiver_id && isMobileAutoPopulated ? "Mobile linked to profile" : "Type mobile number..."}
                                         value={formData.receiver_mobile} 
-                                        onChange={(e) => setFormData({...formData, receiver_mobile: e.target.value})} 
+                                        onChange={(e) => setFormData({...formData, receiver_mobile: e.target.value})}
+                                        readOnly={!!(formData.receiver_id && isMobileAutoPopulated)}
+                                    />
+                                </div>
+                                
+                                <div className="space-y-2 lg:col-span-2">
+                                    <InputLabel label="Expected Return Date" />
+                                    <input 
+                                        type="date" 
+                                        className={`w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none transition-all ${
+                                            formData.pass_type === 'NRGP' ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-50 text-slate-700 focus:border-blue-600'
+                                        }`}
+                                        value={formData.expected_return_date} 
+                                        onChange={(e) => setFormData({...formData, expected_return_date: e.target.value})} 
+                                        readOnly={formData.pass_type === 'NRGP'}
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Inventory Grid */}
-                    <div className="bg-white rounded-[24px] border border-slate-200 shadow-xl overflow-hidden">
-                        <div className="px-8 py-5 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-                            <div>
-                                <h3 className="text-base font-black text-slate-900 tracking-tight">Material Inventory</h3>
-                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Line Items for Delivery Challan</p>
-                            </div>
-                            <button onClick={addItem} className="bg-white hover:bg-slate-50 text-slate-900 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border border-slate-200 transition-all flex items-center gap-2 shadow-sm active:scale-95">
-                                <Plus className="w-3.5 h-3.5" /> Add Row
-                            </button>
+                    <DataGrid 
+                        rowData={items}
+                        columnDefs={columnDefs}
+                        height="400px"
+                        rowHeight={50}
+                        headerHeight={40}
+                        hideToolbar={true}
+                    />
+
+                    <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-200 flex justify-end items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <Info size={14} className="text-slate-300" />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Inventory Summary</span>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-white">
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12">Sl</th>
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Part No</th>
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Description</th>
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-24">Qty</th>
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-left">Remarks</th>
-                                        <th className="border border-slate-200 px-3 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-12"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((item, index) => (
-                                        <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
-                                            <td className="border border-slate-100 p-0 text-center font-bold text-[10px] text-slate-400">{index + 1}</td>
-                                            <td className="border border-slate-100 p-0 w-32"><input className="w-full px-4 py-3 text-xs font-bold border-none bg-transparent outline-none" placeholder="PN-000" value={item.part_no} onChange={(e) => updateItem(item.id, 'part_no', e.target.value)} /></td>
-                                            <td className="border border-slate-100 p-0"><input className="w-full px-4 py-3 text-xs font-bold border-none bg-transparent outline-none" placeholder="Item descriptive name..." value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} /></td>
-                                            <td className="border border-slate-100 p-0 w-24"><input type="number" className="w-full px-4 py-3 text-xs font-bold border-none bg-transparent outline-none text-center" value={item.qty} onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 0)} /></td>
-                                            <td className="border border-slate-100 p-0"><input className="w-full px-4 py-3 text-[11px] font-medium border-none bg-transparent outline-none" placeholder="Note..." value={item.remarks} onChange={(e) => updateItem(item.id, 'remarks', e.target.value)} /></td>
-                                            <td className="border border-slate-100 p-0 text-center">
-                                                <button onClick={() => removeItem(item.id)} className={`p-2 text-slate-200 hover:text-red-500 transition-all ${items.length === 1 ? 'opacity-0 cursor-default' : 'hover:scale-110 active:scale-90'}`}><Trash2 size={14} /></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    <tr className="bg-slate-50/50">
-                                        <td colSpan="3" className="border border-slate-200 px-6 py-4 text-[11px] font-black text-slate-900 text-right uppercase tracking-widest italic">Inventory Summary</td>
-                                        <td className="border border-slate-200 px-4 py-4 text-xs font-black text-slate-900 text-center underline decoration-indigo-300">{calculateTotalQty()}</td>
-                                        <td colSpan="2" className="border border-slate-200 bg-white"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div className="px-8 py-5 bg-white border-t border-slate-200" style={{ display: 'none' }}>
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total cost in INR :</span>
-                                <span className="text-xs font-black text-indigo-600 italic underline decoration-slate-200 underline-offset-8 decoration-2">{numberToWords(calculateTotalValue())}</span>
-                            </div>
+                        <div className="bg-white border border-slate-200 px-6 py-2.5 rounded-xl text-xs font-black text-slate-900 shadow-sm underline decoration-indigo-300 decoration-2 underline-offset-4">
+                            Total Qty: {calculateTotalQty()}
                         </div>
                     </div>
                 </div>
