@@ -24,7 +24,7 @@ const numberToWords = (num) => {
     return str.trim() + ' Rupees only';
 };
 
-import DataGrid from '../../components/common/DataGrid';
+// DataGrid removed for this page as requested
 
 const CreateMaterialPass = () => {
     const navigate = useNavigate();
@@ -154,84 +154,7 @@ const CreateMaterialPass = () => {
     const calculateTotalQty = () => items.reduce((acc, item) => acc + (parseInt(item.qty) || 0), 0);
     const calculateTotalValue = () => items.reduce((acc, item) => acc + ((item.qty || 0) * (item.unit_cost || 0)), 0);
 
-    const columnDefs = [
-        {
-            headerName: 'Sl',
-            valueGetter: (params) => params.node.rowIndex + 1,
-            width: 70,
-            cellClass: 'text-center font-bold text-[10px] text-slate-400 border-r border-slate-100'
-        },
-        {
-            headerName: 'Part No',
-            field: 'part_no',
-            minWidth: 130,
-            cellRenderer: (params) => (
-                <input 
-                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none" 
-                    placeholder="PN-000" 
-                    value={params.value} 
-                    onChange={(e) => updateItem(params.data.id, 'part_no', e.target.value)} 
-                />
-            )
-        },
-        {
-            headerName: 'Description',
-            field: 'description',
-            flex: 2,
-            minWidth: 200,
-            cellRenderer: (params) => (
-                <input 
-                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none" 
-                    placeholder="Item descriptive name..." 
-                    value={params.value} 
-                    onChange={(e) => updateItem(params.data.id, 'description', e.target.value)} 
-                />
-            )
-        },
-        {
-            headerName: 'Qty',
-            field: 'qty',
-            width: 100,
-            cellRenderer: (params) => (
-                <input 
-                    type="number" 
-                    className="w-full h-full px-4 py-3 text-xs font-bold bg-transparent outline-none text-center" 
-                    value={params.value} 
-                    onChange={(e) => updateItem(params.data.id, 'qty', parseInt(e.target.value) || 0)} 
-                />
-            )
-        },
-        {
-            headerName: 'Remarks',
-            field: 'remarks',
-            flex: 1,
-            minWidth: 150,
-            cellRenderer: (params) => (
-                <input 
-                    className="w-full h-full px-4 py-3 text-[11px] font-medium bg-transparent outline-none" 
-                    placeholder="Note..." 
-                    value={params.value} 
-                    onChange={(e) => updateItem(params.data.id, 'remarks', e.target.value)} 
-                />
-            )
-        },
-        {
-            headerName: '',
-            width: 60,
-            sortable: false,
-            filter: false,
-            cellRenderer: (params) => (
-                <div className="flex items-center justify-center h-full">
-                    <button 
-                        onClick={() => removeItem(params.data.id)} 
-                        className={`p-2 text-slate-200 hover:text-red-500 transition-all ${items.length === 1 ? 'opacity-0 cursor-default' : 'hover:scale-110 active:scale-90'}`}
-                    >
-                        <Trash2 size={14} />
-                    </button>
-                </div>
-            )
-        }
-    ];
+    // columnDefs removed as we are using a standard HTML table below
 
     if (submittedPass) {
         return (
@@ -477,14 +400,79 @@ const CreateMaterialPass = () => {
                         </div>
                     </div>
 
-                    <DataGrid 
-                        rowData={items}
-                        columnDefs={columnDefs}
-                        height="400px"
-                        rowHeight={50}
-                        headerHeight={40}
-                        hideToolbar={true}
-                    />
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead className="bg-[#f1f5f9] border-b-2 border-slate-200">
+                                    <tr>
+                                        <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200/50 w-16">Sl</th>
+                                        <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200/50 min-w-[150px]">Part Number</th>
+                                        <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200/50 min-w-[250px]">Description</th>
+                                        <th className="px-6 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200/50 w-24">Qty</th>
+                                        <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-widest border-r border-slate-200/50">Remarks</th>
+                                        <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-16"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {items.map((item, index) => (
+                                        <tr key={item.id} className="group hover:bg-slate-50 transition-colors">
+                                            <td className="px-4 py-4 text-center font-bold text-sm text-slate-400 border-r border-slate-100 bg-slate-50/30">
+                                                {index + 1}
+                                            </td>
+                                            <td className="px-0 py-0 border-r border-slate-100">
+                                                <input 
+                                                    className="w-full px-6 py-4 text-sm font-bold text-slate-700 bg-transparent outline-none placeholder:text-slate-300 placeholder:font-medium focus:bg-white transition-colors animate-none" 
+                                                    placeholder="PN-000" 
+                                                    value={item.part_no} 
+                                                    onChange={(e) => updateItem(item.id, 'part_no', e.target.value)} 
+                                                />
+                                            </td>
+                                            <td className="px-0 py-0 border-r border-slate-100">
+                                                <input 
+                                                    className="w-full px-6 py-4 text-sm font-bold text-slate-700 bg-transparent outline-none placeholder:text-slate-300 placeholder:font-medium focus:bg-white transition-colors" 
+                                                    placeholder="Enter item description..." 
+                                                    value={item.description} 
+                                                    onChange={(e) => updateItem(item.id, 'description', e.target.value)} 
+                                                />
+                                            </td>
+                                            <td className="px-0 py-0 border-r border-slate-100">
+                                                <input 
+                                                    type="number"
+                                                    className="w-full px-4 py-4 text-sm font-bold text-slate-700 bg-transparent outline-none text-center placeholder:text-slate-300 focus:bg-white transition-colors" 
+                                                    value={item.qty} 
+                                                    onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 0)} 
+                                                />
+                                            </td>
+                                            <td className="px-0 py-0 border-r border-slate-100">
+                                                <input 
+                                                    className="w-full px-6 py-4 text-sm font-medium text-slate-500 bg-transparent outline-none placeholder:text-slate-300 focus:bg-white transition-colors" 
+                                                    placeholder="Add notes..." 
+                                                    value={item.remarks} 
+                                                    onChange={(e) => updateItem(item.id, 'remarks', e.target.value)} 
+                                                />
+                                            </td>
+                                            <td className="px-4 py-4 text-center">
+                                                <button 
+                                                    onClick={() => removeItem(item.id)} 
+                                                    className={`p-2 text-slate-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 ${items.length === 1 ? 'opacity-0 cursor-default' : 'active:scale-90 scale-100'}`}
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                            <button 
+                                onClick={addItem}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm active:scale-95 mx-auto"
+                            >
+                                <Plus size={16} /> ADD ANOTHER ITEM
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="px-8 py-5 bg-slate-50/50 border-t border-slate-200 flex justify-end items-center gap-6">
                         <div className="flex items-center gap-2">

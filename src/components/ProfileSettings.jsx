@@ -173,7 +173,7 @@ const ProfileSettings = ({ onProfileUpdate }) => {
         // Logout first for security, then redirect to forgot password flow
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        navigate('/login?flow=forgot'); 
+        window.location.replace('/login?flow=forgot'); 
     };
 
     const handleFileUpload = async (e) => {

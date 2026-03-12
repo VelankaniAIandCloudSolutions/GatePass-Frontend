@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import RecentActivity from '../../components/RecentActivity';
 import LocationManagement from '../../components/LocationManagement';
@@ -124,18 +124,33 @@ const StatCard = ({ label, value, growth, color = 'slate', active = false, onCli
     );
 };
 
-const DashboardSkeleton = ({ role, initialTab = 'overview' }) => {
+const DashboardSkeleton = ({ role: defaultRole, initialTab = 'overview' }) => {
+    const [role] = useState(defaultRole);
+    // Sync active tab with URL for browser history (Back button)
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || initialTab;
+    
+    // Helper to safely update tab
+    const setActiveTab = (tab) => {
+        setSearchParams({ tab });
+    };
+
     const [user, setUser] = useState({ name: 'User', role: 'user' });
     const [counts, setCounts] = useState({ active: 0, pending: 0, approved: 0, rejected: 0 });
     const [isPinned, setIsPinned] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
-    const [activeTab, setActiveTab] = useState(initialTab);
     const [selectedStatus, setSelectedStatus] = useState('active');
     const [trackDC, setTrackDC] = useState('');
 
     const handleTrack = (dc) => {
         setTrackDC(dc);
         setActiveTab('track');
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.replace('/login');
     };
 
     const isExpanded = isPinned || isHovered;
@@ -201,7 +216,11 @@ const DashboardSkeleton = ({ role, initialTab = 'overview' }) => {
                 className="fixed left-0 top-0 bottom-0 bg-white border-r z-50 flex flex-col shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]"
             >
                 <div className="h-20 shrink-0 flex items-center px-6">
-                    <div className="flex items-center gap-3">
+                    <div 
+                        className="flex items-center gap-3 cursor-pointer" 
+                        onClick={() => setActiveTab('overview')}
+                        title="Go to Dashboard"
+                    >
                         <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-lg shadow-md shadow-indigo-600/20 shrink-0 transform transition-transform duration-500 hover:rotate-6">
                             G
                         </div>
@@ -254,7 +273,7 @@ const DashboardSkeleton = ({ role, initialTab = 'overview' }) => {
                 </nav>
 
                 <div className="p-4 border-t border-slate-50">
-                    <Link to="/logout" className="group flex items-center gap-4 px-4 h-12 rounded-xl transition-all duration-300 hover:bg-red-50 text-slate-500 hover:text-red-600 overflow-hidden">
+                    <button onClick={handleLogout} className="w-full group flex items-center gap-4 px-4 h-12 rounded-xl transition-all duration-300 hover:bg-red-50 text-slate-500 hover:text-red-600 overflow-hidden">
                         <X size={18} className="shrink-0 transition-transform duration-300 group-hover:rotate-90" />
                         <AnimatePresence>
                             {isExpanded && (
@@ -268,7 +287,7 @@ const DashboardSkeleton = ({ role, initialTab = 'overview' }) => {
                                 </motion.span>
                             )}
                         </AnimatePresence>
-                    </Link>
+                    </button>
                 </div>
             </motion.aside>
 

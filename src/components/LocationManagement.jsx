@@ -96,7 +96,7 @@ const LocationManagement = () => {
             flex: 1,
             minWidth: 200,
             cellRenderer: (params) => (
-                <div className={`flex flex-col leading-tight py-2 ${!params.data.is_active ? 'opacity-60' : ''}`}>
+                <div className={`flex flex-col leading-tight py-1 ${!params.data.is_active ? 'opacity-60' : ''}`}>
                     <span className="font-bold text-slate-800 text-sm tracking-tight">{params.value}</span>
                     <span className={`text-[10px] font-bold uppercase tracking-wider mt-1 ${params.data.is_active ? 'text-emerald-500' : 'text-slate-400'}`}>
                         {params.data.is_active ? 'Active Facility' : 'Operational Offline'}
@@ -110,7 +110,7 @@ const LocationManagement = () => {
             flex: 2,
             minWidth: 250,
             cellRenderer: (params) => (
-                <div className={`flex items-center text-xs font-medium text-slate-500 italic ${!params.data.is_active ? 'opacity-50' : ''}`}>
+                <div className={`flex items-center text-sm font-medium text-slate-500 italic ${!params.data.is_active ? 'opacity-50' : ''}`}>
                     {params.value}
                 </div>
             )
@@ -126,7 +126,7 @@ const LocationManagement = () => {
                         <UserIcon size={12} className="text-slate-400" />
                         <span className="text-sm font-semibold text-slate-700">{params.value || 'Unassigned'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-600">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-600">
                         <Phone size={10} className="text-slate-300" />
                         {params.data.phone || 'No direct line'}
                     </div>
@@ -140,7 +140,7 @@ const LocationManagement = () => {
             minWidth: 200,
             cellRenderer: (params) => (
                 <div className={`flex items-center ${!params.data.is_active ? 'opacity-50' : ''}`}>
-                    <span className="text-xs font-semibold text-indigo-600 underline decoration-indigo-100 underline-offset-4">{params.value || 'auth-pending@site.com'}</span>
+                    <span className="text-sm font-semibold text-indigo-600 underline decoration-indigo-100 underline-offset-4">{params.value || 'auth-pending@site.com'}</span>
                 </div>
             )
         },
@@ -155,14 +155,14 @@ const LocationManagement = () => {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => handleToggleStatus(params.data)}
-                        className={`p-1.5 rounded-lg transition-all ${params.data.is_active ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
+                        className={`p-1.5 rounded-lg transition-all active:scale-90 ${params.data.is_active ? 'text-emerald-500 hover:bg-emerald-50' : 'text-slate-400 hover:bg-slate-100'}`}
                         title={params.data.is_active ? 'Deactivate Site' : 'Activate Site'}
                     >
                         <Power size={18} />
                     </button>
                     <button 
                         onClick={() => handleEdit(params.data)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
                         title="Edit Metadata"
                     >
                         <Edit2 size={18} />

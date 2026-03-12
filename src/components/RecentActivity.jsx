@@ -8,6 +8,82 @@ import axios from '../api/axios';
 
 import DataGrid from './common/DataGrid';
 
+// --- Stable Cell Renderer for Actions Column ---
+// We define this outside the parent component so its reference never changes.
+// This prevents AG Grid from unmounting the input field and breaking focus while typing.
+const ActionsCellRenderer = (params) => {
+    const [vehicleNo, setVehicleNo] = useState("");
+    
+    if (!params || !params.data || !params.context) return null;
+    
+    const pass = params.data;
+    const { 
+        actionLoading, role, user, userLocationId, 
+        handleAction, handleView, handleDownload, onTrack 
+    } = params.context;
+
+    const isPassLoading = actionLoading === pass.id;
+
+    return (
+        <div className="flex items-center gap-3 whitespace-nowrap overflow-x-auto">
+            <button onClick={() => onTrack && onTrack(pass.dc_number)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all active:scale-90" title="Track"><Navigation2 size={18} /></button>
+            <button onClick={() => handleView(pass.id)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all active:scale-90" title="View"><Eye size={18} /></button>
+            <button onClick={() => handleDownload(pass.id, pass.dc_number)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all active:scale-90" title="Download"><Download size={18} /></button>
+            
+            {role === 'manager' && pass.status === 'PENDING_MANAGER' && user && user.id && parseInt(pass.manager_id) === parseInt(user.id) && (
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-2">
+                    <button onClick={() => handleAction(pass.id, 'reject')} disabled={isPassLoading} className="p-1 text-red-400 hover:text-red-600 transition-all active:scale-90"><XCircle size={18} /></button>
+
+                    <button onClick={() => handleAction(pass.id, 'approve')} disabled={isPassLoading} className="p-1 text-emerald-400 hover:text-emerald-600 transition-all active:scale-90"><CheckCircle2 size={18} /></button>
+                </div>
+            )}
+
+            {role === 'security' && (
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-2 flex-nowrap">
+                    {pass.status === 'PENDING_SECURITY_ORIGIN' && parseInt(userLocationId) === parseInt(pass.from_location_id) && (
+                        <div className="flex items-center gap-3 whitespace-nowrap">
+                            <input 
+                                type="text" 
+                                placeholder="Vehicle No" 
+                                className="px-2 py-1 text-sm border border-slate-200 rounded-md w-28 outline-none focus:border-indigo-400 font-semibold"
+                                value={vehicleNo}
+                                onChange={(e) => setVehicleNo(e.target.value)}
+                            />
+                            <button 
+                                onClick={() => {
+                                    if (!vehicleNo.trim()) {
+                                        alert('Please enter a vehicle number before dispatching.');
+                                        return;
+                                    }
+                                    handleAction(pass.id, 'dispatch', vehicleNo.trim());
+                                }} 
+                                disabled={isPassLoading} 
+                                className="p-1 text-emerald-500 hover:text-emerald-600 transition-all active:scale-90" 
+                                title="Approve / Dispatch"
+                            >
+                                {isPassLoading ? <Loader2 size={18} className="animate-spin" /> : <Truck size={18} />}
+                            </button>
+                            <button onClick={() => handleAction(pass.id, 'security_reject')} disabled={isPassLoading} className="p-1 text-red-400 hover:text-red-600 transition-all active:scale-90" title="Reject">
+                                <XCircle size={18} />
+                            </button>
+                        </div>
+                    )}
+                    {pass.status === 'PENDING_SECURITY_DESTINATION' && parseInt(userLocationId) === parseInt(pass.to_location_id) && (
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => handleAction(pass.id, 'receive')} disabled={isPassLoading} className="p-1 text-blue-500 hover:text-blue-600 transition-all active:scale-90" title="Confirm Receipt">
+                                {isPassLoading ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={18} />}
+                            </button>
+                            <button onClick={() => handleAction(pass.id, 'security_reject')} disabled={isPassLoading} className="p-1 text-red-400 hover:text-red-600 transition-all active:scale-90" title="Reject">
+                                <XCircle size={18} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const StatusBadge = ({ status }) => {
     const colors = {
         PENDING_SECURITY_1: 'bg-amber-50 text-amber-600 border-amber-100',
@@ -55,7 +131,7 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
         }
     };
 
-    const handleAction = async (passId, action) => {
+    const handleAction = async (passId, action, vehicleNo = null) => {
         setActionLoading(passId);
         try {
             let payload = { id: passId };
@@ -67,13 +143,15 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
             } else if (action === 'dispatch') {
                 endpoint = '/material/security/dispatch';
                 payload.passId = passId;
-                payload.vehicle_number = vehicleInputs[passId] || '';
+                payload.vehicle_number = vehicleNo || vehicleInputs[passId] || '';
             } else if (action === 'receive') {
                 endpoint = '/material/security/receive';
                 payload.passId = passId;
             } else if (action === 'security_reject') {
                 payload.rejected_reason = prompt('Reason for rejection:') || 'Rejected by Security';
-                if (!payload.rejected_reason) return; 
+                if (!payload.rejected_reason) return;
+                endpoint = '/material/security/reject';
+                payload.passId = passId;
             } else if (action === 'receiver_confirm') {
                 endpoint = '/material/confirm-receiver-portal';
                 payload.passId = passId;
@@ -123,15 +201,15 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
         } catch (err) { console.error('View error:', err); }
     };
 
-    const columnDefs = [
+    const columnDefs = React.useMemo(() => [
         {
             headerName: 'DC Number',
             field: 'dc_number',
             flex: 1,
             minWidth: 160,
             cellRenderer: (params) => (
-                <div className="flex flex-col leading-tight">
-                    <span className="font-bold text-slate-800 text-sm">{params.value}</span>
+                <div className="flex flex-col leading-tight py-1">
+                    <span className="font-bold text-slate-800 text-sm tracking-tight">{params.value}</span>
                     <div className="mt-1">
                         <StatusBadge status={params.data.status} />
                     </div>
@@ -146,7 +224,7 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
             cellRenderer: (params) => (
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
                     <span className="truncate">{params.data.from_name}</span>
-                    <ChevronRight size={14} className="text-slate-300 shrink-0" />
+                    <span className="text-slate-300 font-bold">→</span>
                     <span className="truncate text-indigo-600">{params.data.to_name}</span>
                 </div>
             )
@@ -155,11 +233,11 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
             headerName: 'Current Stage',
             field: 'current_stage',
             flex: 1,
-            minWidth: 150,
+            minWidth: 160,
             cellRenderer: (params) => (
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <Clock size={12} className="text-slate-300" />
-                    {params.value}
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium w-full overflow-hidden">
+                    <Clock size={12} className="text-slate-400 shrink-0" />
+                    <span title={params.value} className="truncate">{params.value}</span>
                 </div>
             )
         },
@@ -168,7 +246,7 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
             field: 'created_by',
             flex: 1,
             minWidth: 140,
-            cellStyle: { fontWeight: '600', color: '#475569', fontSize: '13px' }
+            cellStyle: { fontWeight: '600', color: '#475569', fontSize: '13.5px' }
         },
         {
             headerName: 'Created Date',
@@ -176,11 +254,11 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
             flex: 1,
             minWidth: 160,
             cellRenderer: (params) => (
-                <div className="flex flex-col leading-tight">
+                <div className="flex flex-col leading-tight py-1">
                     <span className="text-xs font-semibold text-slate-600">
                         {new Date(params.value).toLocaleDateString()}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    <span className="text-[10px] text-slate-400 font-medium mt-0.5 tracking-tighter">
                         {new Date(params.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                 </div>
@@ -189,61 +267,14 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
         {
             headerName: 'Actions',
             field: 'actions',
-            width: 120,
-            minWidth: 120,
+            minWidth: 320,
+            maxWidth: 380,
+            resizable: true,
             sortable: false,
             filter: false,
-            cellRenderer: (params) => {
-                const pass = params.data;
-                const isPassLoading = actionLoading === pass.id;
-                
-                return (
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => onTrack && onTrack(pass.dc_number)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all" title="Track"><Navigation2 size={18} /></button>
-                        <button onClick={() => handleView(pass.id)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all" title="View"><Eye size={18} /></button>
-                        <button onClick={() => handleDownload(pass.id, pass.dc_number)} className="p-1 text-slate-400 hover:text-indigo-600 transition-all" title="Download"><Download size={18} /></button>
-                        
-                        {role === 'manager' && pass.status === 'PENDING_MANAGER' && parseInt(pass.manager_id) === parseInt(user.id) && (
-                            <div className="flex items-center gap-2 ml-1">
-                                <button onClick={() => handleAction(pass.id, 'reject')} disabled={isPassLoading} className="p-1 text-red-400 hover:text-red-600 transition-all"><XCircle size={18} /></button>
-                                <button onClick={() => handleAction(pass.id, 'approve')} disabled={isPassLoading} className="p-1 text-emerald-400 hover:text-emerald-600 transition-all"><CheckCircle2 size={18} /></button>
-                            </div>
-                        )}
-
-                        {role === 'security' && (
-                            <div className="flex items-center gap-2 ml-1">
-                                {pass.status === 'PENDING_SECURITY_ORIGIN' && parseInt(userLocationId) === parseInt(pass.from_location_id) && (
-                                    <div className="flex items-center gap-2">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Veh #" 
-                                            className="px-2 py-1 text-[10px] border rounded w-16 outline-none focus:border-indigo-300"
-                                            value={vehicleInputs[pass.id] || ''}
-                                            onChange={(e) => setVehicleInputs({...vehicleInputs, [pass.id]: e.target.value})}
-                                        />
-                                        <button onClick={() => handleAction(pass.id, 'dispatch')} disabled={isPassLoading} className="p-1 text-emerald-500 hover:text-emerald-600 transition-all">
-                                            {isPassLoading ? <Loader2 size={14} className="animate-spin" /> : <Truck size={18} />}
-                                        </button>
-                                    </div>
-                                )}
-                                {pass.status === 'PENDING_SECURITY_DESTINATION' && parseInt(userLocationId) === parseInt(pass.to_location_id) && (
-                                    <button onClick={() => handleAction(pass.id, 'receive')} disabled={isPassLoading} className="p-1 text-blue-500 hover:text-blue-600 transition-all">
-                                        {isPassLoading ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={18} />}
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        {pass.status === 'PENDING_RECEIVER_CONFIRMATION' && parseInt(pass.receiver_id) === parseInt(user.id) && (
-                            <button onClick={() => handleAction(pass.id, 'receiver_confirm')} disabled={isPassLoading} className="p-1 text-emerald-500 hover:text-emerald-600 transition-all">
-                                {isPassLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                            </button>
-                        )}
-                    </div>
-                );
-            }
+            cellRenderer: ActionsCellRenderer
         }
-    ];
+    ], []);
 
     if (isLoading) return (
         <div className="flex items-center justify-center p-20">
@@ -269,6 +300,12 @@ const RecentActivity = ({ role, selectedStatus = 'active', onTrack, onActionSucc
                 rowData={passes}
                 columnDefs={columnDefs}
                 height="600px"
+                gridOptions={{
+                    context: { 
+                        actionLoading, role, user, userLocationId, 
+                        handleAction, handleView, handleDownload, onTrack 
+                    }
+                }}
             />
         </div>
     );

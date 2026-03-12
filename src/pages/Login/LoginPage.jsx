@@ -40,6 +40,19 @@ const LoginPage = () => {
         setForgotStep(1);
     }, [activeTab]);
 
+    // Redirect if already logged in
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        
+        if (token && user) {
+            if (user.role === 'admin') navigate('/admin-dashboard', { replace: true });
+            else if (user.role === 'user') navigate('/user-dashboard', { replace: true });
+            else if (user.role === 'manager') navigate('/manager-dashboard', { replace: true });
+            else if (user.role === 'security') navigate('/security-dashboard', { replace: true });
+        }
+    }, [navigate]);
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -50,11 +63,11 @@ const LoginPage = () => {
             localStorage.setItem('user', JSON.stringify(res.data.data.user));
             
             const role = res.data.data.user.role;
-            if (role === 'admin') navigate('/admin-dashboard');
-            else if (role === 'user') navigate('/user-dashboard');
-            else if (role === 'manager') navigate('/manager-dashboard');
-            else if (role === 'security') navigate('/security-dashboard');
-            else navigate('/login');
+            if (role === 'admin') navigate('/admin-dashboard', { replace: true });
+            else if (role === 'user') navigate('/user-dashboard', { replace: true });
+            else if (role === 'manager') navigate('/manager-dashboard', { replace: true });
+            else if (role === 'security') navigate('/security-dashboard', { replace: true });
+            else navigate('/login', { replace: true });
 
         } catch (err) {
             setMessage({ type: 'error', text: err.response?.data?.message || 'Login failed' });
@@ -101,7 +114,10 @@ const LoginPage = () => {
                 role: signupData.role 
             });
             setMessage({ type: 'success', text: 'Account activated! Redirecting to login...' });
-            setTimeout(() => setActiveTab('login'), 2000);
+            setTimeout(() => {
+                setActiveTab('login');
+                setLoginData(prev => ({ ...prev, email: signupData.email }));
+            }, 2000);
         } catch (err) {
             setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to set password' });
         } finally {

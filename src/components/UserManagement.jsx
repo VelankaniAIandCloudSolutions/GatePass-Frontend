@@ -64,9 +64,9 @@ const UserManagement = () => {
             flex: 1,
             minWidth: 200,
             cellRenderer: (params) => (
-                <div className="flex flex-col leading-tight py-2">
+                <div className="flex flex-col leading-tight py-1">
                     <span className="font-bold text-slate-800 text-sm tracking-tight">{params.value}</span>
-                    <span className="text-[11px] text-slate-400 font-medium mt-0.5">{params.data.email}</span>
+                    <span className="text-xs text-slate-400 font-medium mt-0.5">{params.data.email}</span>
                 </div>
             )
         },
@@ -77,7 +77,7 @@ const UserManagement = () => {
             minWidth: 150,
             cellRenderer: (params) => (
                 <div className="flex flex-col gap-1 items-start">
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                         params.value === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-100' :
                         params.value === 'manager' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                         params.value === 'security' ? 'bg-amber-50 text-amber-600 border-amber-100' :
@@ -85,7 +85,7 @@ const UserManagement = () => {
                     }`}>
                         {params.value}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-bold tracking-tight">{params.data.location_name}</span>
+                    <span className="text-[11px] text-slate-500 font-bold tracking-tight">{params.data.location_name}</span>
                 </div>
             )
         },
@@ -118,7 +118,7 @@ const UserManagement = () => {
                     );
                 }
                 return (
-                    <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs">
+                    <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
                         <Phone size={12} className="text-slate-300" />
                         {user.mobile_number || 'N/A'}
                     </div>
@@ -137,7 +137,7 @@ const UserManagement = () => {
                     {!editingUserId && (
                         <button 
                             onClick={() => startEditing(params.data)}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
                             title="Edit User"
                         >
                             <Edit2 size={18} />

@@ -6,12 +6,60 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Logout from './components/Logout';
 import CreateMaterialPass from './pages/User/CreateMaterialPass';
 
+// Smart Redirect Component for the base URL and catch-all routes
+const SmartRedirect = () => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.role === 'admin') return <Navigate to="/admin-dashboard" replace />;
+      if (user.role === 'manager') return <Navigate to="/manager-dashboard" replace />;
+      if (user.role === 'security') return <Navigate to="/security-dashboard" replace />;
+      if (user.role === 'user') return <Navigate to="/user-dashboard" replace />;
+    } catch (e) {
+      console.error('Invalid user data in localStorage');
+    }
+  }
+  
+  return <Navigate to="/login" replace />;
+};
+
+// Auth Guard specifically for the login page
+const AuthGuard = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      // User is already logged in, redirect them away from login page
+      return <SmartRedirect />;
+    } catch (e) {
+      // Invalid token/user, allow them to see the login page
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  }
+  
+  return children;
+};
+
+
 function App() {
   return (
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route 
+          path="/login" 
+          element={
+            <AuthGuard>
+              <LoginPage />
+            </AuthGuard>
+          } 
+        />
         <Route path="/logout" element={<Logout />} />
 
         {/* User Routes */}
@@ -72,8 +120,8 @@ function App() {
         />
 
         {/* Default Redirect */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<SmartRedirect />} />
+        <Route path="*" element={<SmartRedirect />} />
       </Routes>
     </Router>
   );

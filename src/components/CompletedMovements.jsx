@@ -63,10 +63,10 @@ const CompletedMovements = ({ userRole, onTrack }) => {
             flex: 1,
             minWidth: 160,
             cellRenderer: (params) => (
-                <div className="flex flex-col leading-tight">
-                    <span className="font-bold text-slate-800 text-sm">{params.value}</span>
+                <div className="flex flex-col leading-tight py-1">
+                    <span className="font-bold text-slate-800 text-sm tracking-tight">{params.value}</span>
                     <div className="mt-1">
-                        <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200/50 uppercase tracking-wide">
+                        <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-widest">
                             Completed
                         </span>
                     </div>
@@ -81,7 +81,7 @@ const CompletedMovements = ({ userRole, onTrack }) => {
             cellRenderer: (params) => (
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
                     <span className="truncate">{params.value}</span>
-                    <ChevronRight size={14} className="text-slate-300 shrink-0" />
+                    <span className="text-slate-300 font-bold">→</span>
                     <span className="truncate text-indigo-600">{params.data.destination}</span>
                 </div>
             )
@@ -91,7 +91,7 @@ const CompletedMovements = ({ userRole, onTrack }) => {
             field: 'submitted_by',
             flex: 1,
             minWidth: 140,
-            cellStyle: { fontWeight: '600', color: '#475569', fontSize: '13px' }
+            cellStyle: { fontWeight: '600', color: '#475569', fontSize: '13.5px' }
         },
         {
             headerName: 'Completed Date',
@@ -99,12 +99,12 @@ const CompletedMovements = ({ userRole, onTrack }) => {
             flex: 1,
             minWidth: 160,
             cellRenderer: (params) => (
-                <div className="flex flex-col leading-tight">
+                <div className="flex flex-col leading-tight py-1">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 mb-0.5">
                         <Calendar size={12} className="text-slate-400" />
                         {new Date(params.value).toLocaleDateString()}
                     </div>
-                    <span className="text-[10px] text-slate-400 font-medium ml-4">
+                    <span className="text-[10px] text-slate-400 font-medium ml-4 tracking-tighter">
                         {new Date(params.value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                 </div>
@@ -121,7 +121,7 @@ const CompletedMovements = ({ userRole, onTrack }) => {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => handleViewPDF(params.data.id)}
-                        className="p-1 text-slate-400 hover:text-indigo-600 transition-all"
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
                         title="View PDF"
                     >
                         <FileText size={18} />
@@ -129,7 +129,7 @@ const CompletedMovements = ({ userRole, onTrack }) => {
                     {onTrack && (
                         <button 
                             onClick={() => onTrack(params.data.dc_number)}
-                            className="p-1 text-slate-400 hover:text-indigo-600 transition-all"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90"
                             title="Track Pass"
                         >
                             <ExternalLink size={18} />

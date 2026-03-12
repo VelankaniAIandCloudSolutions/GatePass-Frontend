@@ -120,6 +120,7 @@ const DataGrid = ({
           headerHeight={48}
           suppressCellFocus={true}
           animateRows={true}
+          suppressColumnVirtualisation={true}
           overlayLoadingTemplate={
             '<div class="flex flex-col items-center gap-2 py-10"><div class="ag-overlay-loading-center text-slate-500 font-medium">Processing Data...</div></div>'
           }
@@ -160,6 +161,8 @@ const DataGrid = ({
           .ag-cell {
             display: flex;
             align-items: center;
+            font-size: 14px;
+            color: #334155;
           }
 
           /* Premium Header Styling */
@@ -182,7 +185,7 @@ const DataGrid = ({
             height: 16px;
             width: 1px;
             background-color: #cbd5e1;
-            opacity: 0.8;
+            opacity: 0.6;
             z-index: 10;
           }
           .ag-header-cell:last-child::after,
